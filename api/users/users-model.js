@@ -1,6 +1,7 @@
 const db = require('../../data/db-config.js');
+const bcrypt = require('bcryptjs')
 
-function find() {
+async function find() {
   /**
     You will need to join two tables.
     Resolves to an ARRAY with all users.
@@ -18,9 +19,12 @@ function find() {
       }
     ]
    */
+  return await db('roles as r')
+    .join('users as u', 'r.role_id', 'u.role_id')
+    .select('u.user_id', 'u.username', 'r.role_name')
 }
 
-function findBy(filter) {
+async function findBy(filter) {
   /**
     You will need to join two tables.
     Resolves to an ARRAY with all users that match the filter condition.
@@ -34,9 +38,13 @@ function findBy(filter) {
       }
     ]
    */
+  return await db('roles as r')
+    .join('users as u', 'r.role_id', 'u.role_id')
+    .select('u.user_id', 'u.username', 'u.password' , 'r.role_name')
+    .where({filter})
 }
 
-function findById(user_id) {
+async function findById(user_id) {
   /**
     You will need to join two tables.
     Resolves to the user with the given user_id.
@@ -47,6 +55,11 @@ function findById(user_id) {
       "role_name": "instructor"
     }
    */
+  return await db('roles as r')
+    .join('users as u', 'r.role_id', 'u.role_id')
+    .select('u.user_id', 'u.username', 'u.password' , 'r.role_name')
+    .where('u.user_id', user_id)
+    .first()
 }
 
 /**
@@ -78,6 +91,8 @@ async function add({ username, password, role_name }) { // done for you
       const [role_id] = await trx('roles').insert({ role_name: role_name })
       role_id_to_use = role_id
     }
+    const hash = bcrypt.hashSync(password,12)
+    password = hash
     const [user_id] = await trx('users').insert({ username, password, role_id: role_id_to_use })
     created_user_id = user_id
   })
